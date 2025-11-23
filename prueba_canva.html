@@ -1,0 +1,3007 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestor de Tickets</title>
+    <script src="js/data_sdk.js"></script>
+    <script src="js/element_sdk.js"></script>
+    <style>
+      body {
+        box-sizing: border-box;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        width: 100%;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: #f5f7fa;
+        color: #2d3748;
+      }
+
+      .container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+      }
+
+      .header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1a202c;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .user-badge {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 16px;
+        background: white;
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .user-badge:hover {
+        border-color: #4c51bf;
+        box-shadow: 0 4px 8px rgba(76, 81, 191, 0.15);
+      }
+
+      .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e2e8f0;
+      }
+
+      .user-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .user-display-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1a202c;
+      }
+
+      .user-role-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .btn-primary {
+        background: #4c51bf;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .btn-primary:hover {
+        background: #434190;
+      }
+
+      .btn-primary:disabled {
+        background: #a0aec0;
+        cursor: not-allowed;
+      }
+
+      .btn-outline {
+        background: transparent;
+        color: #4c51bf;
+        border: 2px solid #4c51bf;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+      }
+
+      .btn-outline:hover {
+        background: #4c51bf;
+        color: white;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 0;
+      }
+
+      .tab {
+        background: transparent;
+        border: none;
+        padding: 12px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        color: #718096;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.2s;
+      }
+
+      .tab:hover {
+        color: #4c51bf;
+      }
+
+      .tab.active {
+        color: #4c51bf;
+        border-bottom-color: #4c51bf;
+      }
+
+      .tickets-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 20px;
+      }
+
+      .ticket-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .ticket-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .ticket-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 12px;
+      }
+
+      .ticket-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a202c;
+        flex: 1;
+      }
+
+      .ticket-priority {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .priority-high {
+        background: #fed7d7;
+        color: #c53030;
+      }
+
+      .priority-medium {
+        background: #feebc8;
+        color: #c05621;
+      }
+
+      .priority-low {
+        background: #c6f6d5;
+        color: #2f855a;
+      }
+
+      .ticket-description {
+        font-size: 14px;
+        color: #718096;
+        line-height: 1.5;
+      }
+
+      .ticket-assigned {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #718096;
+        padding: 8px 12px;
+        background: #f7fafc;
+        border-radius: 6px;
+      }
+
+      .ticket-assigned-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e2e8f0;
+      }
+
+      .ticket-assigned strong {
+        color: #2d3748;
+      }
+
+      .ticket-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 12px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .ticket-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+
+      .status-open .status-dot {
+        background: #4299e1;
+      }
+
+      .status-closed .status-dot {
+        background: #48bb78;
+      }
+
+      .status-blocked .status-dot {
+        background: #f56565;
+      }
+
+      .status-pending .status-dot {
+        background: #ed8936;
+      }
+
+      .status-reopened .status-dot {
+        background: #9f7aea;
+      }
+
+      .ticket-category {
+        font-size: 12px;
+        color: #a0aec0;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 1000;
+      }
+
+      .modal.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        border-radius: 16px;
+        padding: 32px;
+        max-width: 600px;
+        width: 100%;
+        max-height: 90%;
+        overflow-y: auto;
+      }
+
+      .modal-content.large {
+        max-width: 900px;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+
+      .modal-header h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a202c;
+      }
+
+      .btn-close {
+        background: transparent;
+        border: none;
+        font-size: 24px;
+        color: #a0aec0;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: background 0.2s;
+      }
+
+      .btn-close:hover {
+        background: #f7fafc;
+        color: #4a5568;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 8px;
+      }
+
+      .form-group input,
+      .form-group textarea,
+      .form-group select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: border-color 0.2s;
+      }
+
+      .form-group input:focus,
+      .form-group textarea:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #4c51bf;
+      }
+
+      .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+      }
+
+      .btn-secondary {
+        background: #e2e8f0;
+        color: #2d3748;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .btn-secondary:hover {
+        background: #cbd5e0;
+      }
+
+      .btn-danger {
+        background: #f56565;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .btn-danger:hover {
+        background: #e53e3e;
+      }
+
+      .btn-danger:disabled {
+        background: #fc8181;
+        cursor: not-allowed;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #a0aec0;
+      }
+
+      .empty-state-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+      }
+
+      .empty-state-text {
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #ffffff;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: #2d3748;
+        color: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: none;
+        align-items: center;
+        gap: 12px;
+        z-index: 2000;
+        animation: slideIn 0.3s ease;
+      }
+
+      .toast.active {
+        display: flex;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .users-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .user-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        background: #f7fafc;
+        border-radius: 8px;
+        border: 2px solid #e2e8f0;
+        gap: 12px;
+      }
+
+      .user-item-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+      }
+
+      .user-item-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e2e8f0;
+      }
+
+      .user-info-details {
+        flex: 1;
+      }
+
+      .user-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a202c;
+        margin-bottom: 4px;
+      }
+
+      .user-meta {
+        font-size: 13px;
+        color: #718096;
+      }
+
+      .user-role {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-left: 8px;
+      }
+
+      .role-admin {
+        background: linear-gradient(135deg, #ff8c00 0%, #ffd700 100%);
+        color: white;
+      }
+
+      .role-gestor {
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        color: white;
+      }
+
+      .role-soporte {
+        background: #bee3f8;
+        color: #2c5282;
+      }
+
+      .btn-small {
+        padding: 6px 12px;
+        font-size: 12px;
+        border-radius: 6px;
+      }
+
+      .ticket-detail {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .detail-section {
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 20px;
+      }
+
+      .detail-section:last-child {
+        border-bottom: none;
+      }
+
+      .detail-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #718096;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        letter-spacing: 0.5px;
+      }
+
+      .detail-value {
+        font-size: 14px;
+        color: #2d3748;
+      }
+
+      .comments-section {
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      .comment-item {
+        background: #f7fafc;
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+      }
+
+      .comment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .comment-author-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .comment-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e2e8f0;
+      }
+
+      .comment-author {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2d3748;
+      }
+
+      .comment-date {
+        font-size: 12px;
+        color: #a0aec0;
+      }
+
+      .comment-text {
+        font-size: 14px;
+        color: #4a5568;
+        line-height: 1.5;
+      }
+
+      .comment-form {
+        display: flex;
+        gap: 12px;
+        align-items: start;
+        margin-top: 16px;
+      }
+
+      .comment-input {
+        flex: 1;
+      }
+
+      .two-column {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      @media (max-width: 768px) {
+        .two-column {
+          grid-template-columns: 1fr;
+        }
+      }
+      .login-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+      }
+
+      .login-overlay.hidden {
+        display: none;
+      }
+
+      .login-box {
+        background: white;
+        border-radius: 20px;
+        padding: 48px 40px;
+        max-width: 480px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      .login-header {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+
+      .login-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a202c;
+        margin-bottom: 8px;
+      }
+
+      .login-header p {
+        font-size: 14px;
+        color: #718096;
+      }
+
+      .login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .login-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        background: #f7fafc;
+        padding: 4px;
+        border-radius: 10px;
+      }
+
+      .login-tab {
+        flex: 1;
+        padding: 10px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #718096;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .login-tab.active {
+        background: white;
+        color: #4c51bf;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .login-option {
+        padding: 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+      }
+
+      .login-option:hover {
+        border-color: #4c51bf;
+        background: #f7fafc;
+      }
+
+      .login-option-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e2e8f0;
+      }
+
+      .login-option-info {
+        flex: 1;
+      }
+
+      .login-option-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 2px;
+      }
+
+      .login-option-desc {
+        font-size: 12px;
+        color: #718096;
+      }
+
+      .error-message {
+        background: #fed7d7;
+        color: #c53030;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        display: none;
+      }
+
+      .error-message.show {
+        display: block;
+      }
+
+      .success-message {
+        background: #c6f6d5;
+        color: #2f855a;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        display: none;
+        margin-top: 16px;
+      }
+
+      .success-message.show {
+        display: block;
+      }
+
+      .logout-btn {
+        background: transparent;
+        border: 2px solid #f56565;
+        color: #f56565;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .logout-btn:hover {
+        background: #f56565;
+        color: white;
+      }
+
+      .owner-badge {
+        background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+        color: white;
+      }
+
+      .profile-image-preview {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #e2e8f0;
+        margin: 0 auto 16px;
+        display: block;
+      }
+
+      .emoji-picker {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+        padding: 16px;
+        background: #f7fafc;
+        border-radius: 8px;
+        margin-top: 8px;
+      }
+
+      .emoji-option {
+        font-size: 32px;
+        padding: 8px;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+      }
+
+      .emoji-option:hover {
+        border-color: #4c51bf;
+        transform: scale(1.1);
+      }
+
+      .emoji-option.selected {
+        border-color: #4c51bf;
+        background: #edf2f7;
+      }
+
+      .notification-bell {
+        position: relative;
+      }
+
+      .notification-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #f56565;
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 10px;
+        min-width: 20px;
+        text-align: center;
+      }
+
+      .notification-badge.hidden {
+        display: none;
+      }
+
+      .notifications-dropdown {
+        position: absolute;
+        top: 50px;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        width: 400px;
+        max-height: 500px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+      }
+
+      .notifications-dropdown.active {
+        display: block;
+      }
+
+      .notifications-header {
+        padding: 16px 20px;
+        border-bottom: 2px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .notifications-header h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1a202c;
+      }
+
+      .notification-item {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e2e8f0;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .notification-item:hover {
+        background: #f7fafc;
+      }
+
+      .notification-item.unread {
+        background: #edf2f7;
+      }
+
+      .notification-item.unread:hover {
+        background: #e2e8f0;
+      }
+
+      .notification-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 4px;
+      }
+
+      .notification-message {
+        font-size: 13px;
+        color: #718096;
+        margin-bottom: 8px;
+      }
+
+      .notification-time {
+        font-size: 11px;
+        color: #a0aec0;
+      }
+
+      .mark-read-btn {
+        background: transparent;
+        border: none;
+        color: #4c51bf;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 0;
+      }
+
+      .mark-read-btn:hover {
+        text-decoration: underline;
+      }
+    </style>
+
+    <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+  </head>
+  <body>
+    <!-- Login Screen -->
+    <div class="login-overlay" id="loginOverlay">
+      <div class="login-box">
+        <div class="login-header">
+          <h1>🎫 Sistema de Tickets</h1>
+          <p>Inicia sesión para continuar</p>
+        </div>
+        <div class="error-message" id="loginError"></div>
+        <!-- Unified Login Form -->
+        <form class="login-form" id="unifiedLoginForm">
+          <div class="form-group">
+            <label for="loginEmail">📧 Correo Electrónico</label>
+            <input
+              type="email"
+              id="loginEmail"
+              required
+              placeholder="correo@ejemplo.com"
+            />
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">🔒 Contraseña</label>
+            <input
+              type="password"
+              id="loginPassword"
+              required
+              placeholder="Tu contraseña"
+            />
+          </div>
+          <button
+            type="submit"
+            class="btn-primary"
+            style="width: 100%"
+            id="unifiedLoginBtn"
+          >
+            <span id="unifiedLoginBtnContent">🚀 Iniciar Sesión</span>
+          </button>
+        </form>
+      </div>
+    </div>
+    <div class="container">
+      <div class="header">
+        <h1 id="appTitle">🎫 Gestor de Tickets</h1>
+        <div class="header-actions">
+          <div
+            class="notification-bell"
+            id="notificationBell"
+            style="display: none"
+          >
+            <button class="btn-outline" id="notificationBtn">
+              🔔 Notificaciones
+              <span class="notification-badge" id="notificationBadge">0</span>
+            </button>
+            <div class="notifications-dropdown" id="notificationsDropdown">
+              <div class="notifications-header">
+                <h3>🔔 Notificaciones</h3>
+                <button class="mark-read-btn" id="markAllReadBtn">
+                  Marcar todas como leídas
+                </button>
+              </div>
+              <div id="notificationsList">
+                <div class="empty-state" style="padding: 40px 20px">
+                  <div class="empty-state-text" style="font-size: 14px">
+                    No tienes notificaciones
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="user-badge" id="userBadge">
+            <img src="" alt="Avatar" class="user-avatar" id="userAvatar" />
+            <div class="user-info">
+              <div class="user-display-name" id="userDisplayName"></div>
+              <div class="user-role-badge" id="userRoleBadge"></div>
+            </div>
+          </div>
+          <button class="btn-outline" id="myTicketsBtn" style="display: none">
+            📋 Mis Tickets
+          </button>
+          <button class="btn-outline" id="usersBtn" style="display: none">
+            👥 Usuarios
+          </button>
+          <button class="btn-primary" id="newTicketBtn">
+            <span id="newTicketBtnText">➕ Nuevo Ticket</span>
+          </button>
+          <button class="logout-btn" id="logoutBtn">🚪 Cerrar Sesión</button>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-filter="all" id="tabAll">
+          📋 Todos los Tickets
+        </button>
+        <button class="tab" data-filter="open" id="tabOpen">🔓 Abiertos</button>
+        <button class="tab" data-filter="pending" id="tabPending">
+          ⏳ Pendientes
+        </button>
+        <button class="tab" data-filter="closed" id="tabClosed">
+          ✅ Cerrados
+        </button>
+      </div>
+      <div class="tickets-grid" id="ticketsGrid">
+        <div class="empty-state">
+          <div class="empty-state-icon">🎫</div>
+          <div class="empty-state-text">No hay tickets todavía</div>
+        </div>
+      </div>
+    </div>
+    <!-- Modal Ticket -->
+    <div class="modal" id="ticketModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modalTitle">Nuevo Ticket</h2>
+          <button class="btn-close" id="closeModal">×</button>
+        </div>
+        <form id="ticketForm">
+          <div class="form-group">
+            <label for="ticketTitle">📝 Título</label>
+            <input
+              type="text"
+              id="ticketTitle"
+              required
+              placeholder="Ingresa el título del ticket"
+            />
+          </div>
+          <div class="form-group">
+            <label for="ticketDescription">📄 Descripción</label>
+            <textarea
+              id="ticketDescription"
+              required
+              placeholder="Describe el problema o solicitud"
+            ></textarea>
+          </div>
+          <div class="two-column">
+            <div class="form-group">
+              <label for="ticketCategory">🏷️ Categoría</label>
+              <select id="ticketCategory" required>
+                <option value="Soporte">💬 Soporte</option>
+                <option value="Internet / Wi-Fi">📶 Internet / Wi-Fi</option>
+                <option value="Limpieza y mantenimiento">
+                  🧹 Limpieza y mantenimiento
+                </option>
+                <option value="Jardinería / Exterior">
+                  🌳 Jardinería / Exterior
+                </option>
+                <option value="Compras / Reposición de suministros">
+                  🛒 Compras / Reposición de suministros
+                </option>
+                <option value="Servicios">⚙️ Servicios</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="ticketPriority">⚡ Prioridad</label>
+              <select id="ticketPriority" required>
+                <option value="low">🟢 Baja</option>
+                <option value="medium">🟡 Media</option>
+                <option value="high">🔴 Alta</option>
+              </select>
+            </div>
+          </div>
+          <div class="two-column">
+            <div class="form-group">
+              <label for="ticketStatus">🔄 Estado</label>
+              <select id="ticketStatus" required>
+                <option value="open">🔓 Abierto</option>
+                <option value="closed">✅ Cerrado</option>
+                <option value="blocked">🚫 Bloqueado</option>
+                <option value="pending">⏳ Esperando la aprobación</option>
+                <option value="reopened">🔄 Re-abierto</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="ticketAssigned">👤 Asignar a</label>
+              <select id="ticketAssigned">
+                <option value="">Sin asignar</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" id="cancelBtn">
+              ❌ Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn-danger"
+              id="deleteBtn"
+              style="display: none"
+            >
+              <span id="deleteBtnContent">🗑️ Eliminar</span>
+            </button>
+            <button type="submit" class="btn-primary" id="saveBtn">
+              <span id="saveBtnContent">💾 Guardar</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <!-- Modal Detalle Ticket -->
+    <div class="modal" id="detailModal">
+      <div class="modal-content large">
+        <div class="modal-header">
+          <h2 id="detailTitle">Detalle del Ticket</h2>
+          <button class="btn-close" id="closeDetailModal">×</button>
+        </div>
+        <div class="ticket-detail">
+          <div class="detail-section">
+            <div class="detail-label">Título</div>
+            <div class="detail-value" id="detailTicketTitle"></div>
+          </div>
+          <div class="detail-section">
+            <div class="detail-label">Descripción</div>
+            <div class="detail-value" id="detailTicketDescription"></div>
+          </div>
+          <div class="two-column">
+            <div>
+              <div class="detail-label">Estado</div>
+              <div class="detail-value" id="detailTicketStatus"></div>
+            </div>
+            <div>
+              <div class="detail-label">Prioridad</div>
+              <div class="detail-value" id="detailTicketPriority"></div>
+            </div>
+          </div>
+          <div class="two-column">
+            <div>
+              <div class="detail-label">Categoría</div>
+              <div class="detail-value" id="detailTicketCategory"></div>
+            </div>
+            <div>
+              <div class="detail-label">Asignado a</div>
+              <div class="detail-value" id="detailTicketAssigned"></div>
+            </div>
+          </div>
+          <div class="detail-section">
+            <div class="detail-label">💬 Comentarios</div>
+            <div class="comments-section" id="commentsSection">
+              <div class="empty-state">
+                <div class="empty-state-text" style="font-size: 14px">
+                  No hay comentarios todavía
+                </div>
+              </div>
+            </div>
+            <div class="comment-form">
+              <textarea
+                class="comment-input"
+                id="commentInput"
+                placeholder="Escribe un comentario..."
+                rows="3"
+              ></textarea>
+              <button class="btn-primary" id="addCommentBtn">
+                <span id="addCommentBtnContent">💬 Enviar</span>
+              </button>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-secondary" id="closeDetailBtn">❌ Cerrar</button>
+            <button class="btn-primary" id="editTicketBtn">
+              ✏️ Editar Ticket
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Modal Usuarios -->
+    <div class="modal" id="usersModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>👥 Gestión de Usuarios</h2>
+          <button class="btn-close" id="closeUsersModal">×</button>
+        </div>
+        <form id="userForm" style="margin-bottom: 24px">
+          <div class="form-group">
+            <label for="userName">👤 Nombre Completo</label>
+            <input
+              type="text"
+              id="userName"
+              required
+              placeholder="Nombre completo"
+            />
+          </div>
+          <div class="form-group">
+            <label for="userEmail">📧 Email</label>
+            <input
+              type="email"
+              id="userEmail"
+              required
+              placeholder="email@ejemplo.com"
+            />
+          </div>
+          <div class="form-group">
+            <label for="userRole">🎭 Rol</label>
+            <select id="userRole" required>
+              <option value="soporte">💼 Soporte</option>
+              <option value="gestor">👨‍💼 Gestor</option>
+              <option value="admin">⚡ Admin</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            class="btn-primary"
+            style="width: 100%"
+            id="addUserBtn"
+          >
+            <span id="addUserBtnContent">Enviar Invitación</span>
+          </button>
+          <div class="success-message" id="invitationSuccess">
+            ✅ Invitación enviada correctamente
+          </div>
+        </form>
+        <div class="detail-label">👥 Usuarios Registrados</div>
+        <div class="users-list" id="usersList">
+          <div class="empty-state">
+            <div class="empty-state-text" style="font-size: 14px">
+              No hay usuarios registrados
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Modal Mis Tickets -->
+    <div class="modal" id="myTicketsModal">
+      <div class="modal-content large">
+        <div class="modal-header">
+          <h2>📋 Mis Tickets Asignados</h2>
+          <button class="btn-close" id="closeMyTicketsModal">×</button>
+        </div>
+        <div class="tabs" style="margin-bottom: 24px">
+          <button class="tab active" data-my-filter="all">📋 Todos</button>
+          <button class="tab" data-my-filter="open">🔓 Abiertos</button>
+          <button class="tab" data-my-filter="pending">⏳ Pendientes</button>
+          <button class="tab" data-my-filter="closed">✅ Cerrados</button>
+        </div>
+        <div
+          class="tickets-grid"
+          id="myTicketsGrid"
+          style="max-height: 500px; overflow-y: auto"
+        >
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-text">No tienes tickets asignados</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Modal Perfil Usuario -->
+    <div class="modal" id="profileModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>👤 Configurar mi Perfil</h2>
+          <button class="btn-close" id="closeProfileModal">×</button>
+        </div>
+        <form id="profileForm">
+          <img
+            src=""
+            alt="Preview"
+            class="profile-image-preview"
+            id="profileImagePreview"
+          />
+          <div class="form-group">
+            <label>🖼️ Selecciona tu Avatar</label>
+            <div style="display: flex; gap: 12px; margin-bottom: 12px">
+              <button
+                type="button"
+                class="btn-secondary"
+                id="emojiTabBtn"
+                style="flex: 1"
+              >
+                😀 Emojis
+              </button>
+              <button
+                type="button"
+                class="btn-secondary"
+                id="imageTabBtn"
+                style="flex: 1"
+              >
+                📷 Subir Imagen
+              </button>
+            </div>
+            <div class="emoji-picker" id="emojiPicker">
+              <div class="emoji-option" data-emoji="👤">👤</div>
+              <div class="emoji-option" data-emoji="👨">👨</div>
+              <div class="emoji-option" data-emoji="👩">👩</div>
+              <div class="emoji-option" data-emoji="🧑">🧑</div>
+              <div class="emoji-option" data-emoji="👨‍💼">👨‍💼</div>
+              <div class="emoji-option" data-emoji="👩‍💼">👩‍💼</div>
+              <div class="emoji-option" data-emoji="👨‍💻">👨‍💻</div>
+              <div class="emoji-option" data-emoji="👩‍💻">👩‍💻</div>
+              <div class="emoji-option" data-emoji="👨‍🔧">👨‍🔧</div>
+              <div class="emoji-option" data-emoji="👩‍🔧">👩‍🔧</div>
+              <div class="emoji-option" data-emoji="🦸">🦸</div>
+              <div class="emoji-option" data-emoji="🦸‍♀️">🦸‍♀️</div>
+            </div>
+            <div id="imageUploadSection" style="display: none">
+              <input
+                type="file"
+                id="avatarUpload"
+                accept="image/*"
+                style="margin-bottom: 12px"
+              />
+              <div style="font-size: 12px; color: #718096; text-align: center">
+                📷 Selecciona una imagen (JPG, PNG, GIF)
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="profileDisplayName">👤 Nombre para Mostrar</label>
+            <input
+              type="text"
+              id="profileDisplayName"
+              required
+              placeholder="¿Cómo quieres que te llamen?"
+            />
+          </div>
+          <div class="form-group">
+            <label for="profilePassword">🔒 Crea tu Contraseña</label>
+            <input
+              type="password"
+              id="profilePassword"
+              required
+              placeholder="Mínimo 8 caracteres"
+              minlength="8"
+            />
+            <div style="font-size: 12px; color: #718096; margin-top: 8px">
+              📝 Debe contener: 1 mayúscula, 1 minúscula, 1 número y 1 símbolo
+            </div>
+            <div
+              class="error-message"
+              id="passwordError"
+              style="margin-top: 8px"
+            ></div>
+          </div>
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn-primary"
+              style="width: 100%"
+              id="saveProfileBtn"
+            >
+              <span id="saveProfileBtnContent">💾 Guardar y Empezar</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <script>
+      const defaultConfig = {
+        background_color: "#f5f7fa",
+        surface_color: "#ffffff",
+        text_color: "#2d3748",
+        primary_action_color: "#4c51bf",
+        secondary_action_color: "#e2e8f0",
+        font_family:
+          "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        font_size: 14,
+        app_title: "🎫 Gestor de Tickets",
+        new_ticket_button: "➕ Nuevo Ticket",
+        all_tickets_label: "📋 Todos los Tickets",
+        open_tickets_label: "🔓 Abiertos",
+        pending_tickets_label: "⏳ Pendientes",
+        closed_tickets_label: "✅ Cerrados",
+      };
+
+      let currentFilter = "all";
+      let myTicketsFilter = "all";
+      let currentTicket = null;
+      let currentTicketForDetail = null;
+      let allTickets = [];
+      let allUsers = [];
+      let allComments = [];
+      let allNotifications = [];
+      let currentUser = null;
+      let pendingUserSetup = null;
+      let selectedEmoji = "👤";
+
+      const OWNER_CREDENTIALS = {
+        email: "jonathan.romero@admin.com",
+        password: "Admin2024!",
+        name: "Jonathan Romero",
+        display_name: "Jonathan Romero",
+        role: "owner",
+        profile_image: "👨‍💼",
+        id: "owner_001",
+      };
+
+      const statusLabels = {
+        open: "🔓 Abierto",
+        closed: "✅ Cerrado",
+        blocked: "🚫 Bloqueado",
+        pending: "⏳ Esperando aprobación",
+        reopened: "🔄 Re-abierto",
+      };
+
+      const priorityLabels = {
+        low: "🟢 Baja",
+        medium: "🟡 Media",
+        high: "🔴 Alta",
+      };
+
+      const roleLabels = {
+        owner: "DUEÑO",
+        admin: "ADMIN",
+        gestor: "GESTOR",
+        soporte: "SOPORTE",
+      };
+
+      const roleColors = {
+        owner: "owner-badge",
+        admin: "role-admin",
+        gestor: "role-gestor",
+        soporte: "role-soporte",
+      };
+
+      function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.classList.add("active");
+        setTimeout(() => {
+          toast.classList.remove("active");
+        }, 3000);
+      }
+
+      function showLoginError(message) {
+        const errorDiv = document.getElementById("loginError");
+        errorDiv.textContent = message;
+        errorDiv.classList.add("show");
+        setTimeout(() => {
+          errorDiv.classList.remove("show");
+        }, 4000);
+      }
+
+      function validatePassword(password) {
+        const minLength = password.length >= 8;
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSymbol = /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/'`~;]/.test(
+          password
+        );
+
+        return (
+          minLength && hasUpperCase && hasLowerCase && hasNumber && hasSymbol
+        );
+      }
+
+      function showPasswordError(message) {
+        const errorDiv = document.getElementById("passwordError");
+        errorDiv.textContent = message;
+        errorDiv.classList.add("show");
+      }
+
+      function hidePasswordError() {
+        const errorDiv = document.getElementById("passwordError");
+        errorDiv.classList.remove("show");
+      }
+
+      function login(user) {
+        currentUser = user;
+        document.getElementById("loginOverlay").classList.add("hidden");
+        updateUIForCurrentUser();
+        updateUserBadge();
+        showToast(`✨ Bienvenido, ${user.display_name || user.name}`);
+      }
+
+      function logout() {
+        currentUser = null;
+        pendingUserSetup = null;
+        document.getElementById("loginOverlay").classList.remove("hidden");
+        document.getElementById("loginEmail").value = "";
+        document.getElementById("loginPassword").value = "";
+        showToast("🚪 Sesión cerrada correctamente");
+      }
+
+      function updateUserBadge() {
+        if (!currentUser) return;
+
+        const displayName = currentUser.display_name || currentUser.name;
+        const profileImage = currentUser.profile_image || "👤";
+        const role = currentUser.role;
+
+        document.getElementById("userAvatar").src = getAvatarSrc(profileImage);
+        document.getElementById("userDisplayName").textContent = displayName;
+
+        const roleBadge = document.getElementById("userRoleBadge");
+        roleBadge.textContent = roleLabels[role];
+        roleBadge.className = "user-role-badge " + roleColors[role];
+      }
+
+      function openProfileSetup(user) {
+        pendingUserSetup = user;
+        selectedEmoji = user.profile_image || "👤";
+        document.getElementById("profileImagePreview").src =
+          getAvatarSrc(selectedEmoji);
+        document.getElementById("profileDisplayName").value =
+          user.display_name || user.name;
+        document.getElementById("profilePassword").value = "";
+
+        document.querySelectorAll(".emoji-option").forEach((opt) => {
+          opt.classList.remove("selected");
+          if (opt.dataset.emoji === selectedEmoji) {
+            opt.classList.add("selected");
+          }
+        });
+
+        document.getElementById("profileModal").classList.add("active");
+      }
+
+      function formatDate(isoString) {
+        const date = new Date(isoString);
+        return date.toLocaleDateString("es-ES", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function getUserName(userId) {
+        if (!userId) return "Sin asignar";
+        if (userId === "owner_001") return OWNER_CREDENTIALS.display_name;
+        const user = allUsers.find((u) => u.id === userId);
+        return user ? user.display_name || user.name : "Usuario eliminado";
+      }
+
+      function getUserAvatar(userId) {
+        if (!userId) return "👤";
+        if (userId === "owner_001") return OWNER_CREDENTIALS.profile_image;
+        const user = allUsers.find((u) => u.id === userId);
+        return user ? user.profile_image || "👤" : "👤";
+      }
+
+      function getUser(userId) {
+        if (userId === "owner_001") return OWNER_CREDENTIALS;
+        return allUsers.find((u) => u.id === userId);
+      }
+
+      function getAvatarSrc(profileImage) {
+        if (!profileImage || profileImage === "👤") {
+          return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><text y='70' font-size='70' text-anchor='middle' x='50'>👤</text></svg>`;
+        }
+        if (
+          profileImage.startsWith("data:image/") ||
+          profileImage.startsWith("https://") ||
+          profileImage.startsWith("http://")
+        ) {
+          return profileImage;
+        }
+        return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><text y='70' font-size='70' text-anchor='middle' x='50'>${encodeURIComponent(
+          profileImage
+        )}</text></svg>`;
+      }
+
+      function renderTickets() {
+        const grid = document.getElementById("ticketsGrid");
+
+        let filteredTickets = allTickets;
+
+        if (currentFilter !== "all") {
+          filteredTickets = allTickets.filter(
+            (t) => t.status === currentFilter
+          );
+        }
+
+        if (filteredTickets.length === 0) {
+          grid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🎫</div>
+            <div class="empty-state-text">No hay tickets en esta categoría</div>
+          </div>
+        `;
+          return;
+        }
+
+        grid.innerHTML = filteredTickets
+          .map((ticket) => {
+            const assignedUser = getUserName(ticket.assigned_to);
+            const assignedAvatar = getUserAvatar(ticket.assigned_to);
+            return `
+          <div class="ticket-card" data-id="${ticket.id}">
+            <div class="ticket-header">
+              <div class="ticket-title">${ticket.title}</div>
+              <div class="ticket-priority priority-${ticket.priority}">${
+              priorityLabels[ticket.priority]
+            }</div>
+            </div>
+            <div class="ticket-description">${ticket.description}</div>
+            ${
+              ticket.assigned_to
+                ? `
+              <div class="ticket-assigned">
+                <img src="${getAvatarSrc(
+                  assignedAvatar
+                )}" alt="Avatar" class="ticket-assigned-avatar">
+                <strong>${assignedUser}</strong>
+              </div>
+            `
+                : ""
+            }
+            <div class="ticket-footer">
+              <div class="ticket-status status-${ticket.status}">
+                <span class="status-dot"></span>
+                ${statusLabels[ticket.status]}
+              </div>
+              <div class="ticket-category">${ticket.category}</div>
+            </div>
+          </div>
+        `;
+          })
+          .join("");
+
+        document.querySelectorAll(".ticket-card").forEach((card) => {
+          card.addEventListener("click", () => {
+            const ticketId = card.dataset.id;
+            const ticket = allTickets.find((t) => t.id === ticketId);
+            if (ticket) {
+              openDetailModal(ticket);
+            }
+          });
+        });
+      }
+
+      function renderMyTickets() {
+        if (!currentUser) return;
+
+        const grid = document.getElementById("myTicketsGrid");
+        let myTickets = allTickets.filter(
+          (t) => t.assigned_to === currentUser.id
+        );
+
+        if (myTicketsFilter !== "all") {
+          myTickets = myTickets.filter((t) => t.status === myTicketsFilter);
+        }
+
+        if (myTickets.length === 0) {
+          grid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-text">No tienes tickets asignados en esta categoría</div>
+          </div>
+        `;
+          return;
+        }
+
+        grid.innerHTML = myTickets
+          .map((ticket) => {
+            return `
+          <div class="ticket-card" data-id="${ticket.id}">
+            <div class="ticket-header">
+              <div class="ticket-title">${ticket.title}</div>
+              <div class="ticket-priority priority-${ticket.priority}">${
+              priorityLabels[ticket.priority]
+            }</div>
+            </div>
+            <div class="ticket-description">${ticket.description}</div>
+            <div class="ticket-footer">
+              <div class="ticket-status status-${ticket.status}">
+                <span class="status-dot"></span>
+                ${statusLabels[ticket.status]}
+              </div>
+              <div class="ticket-category">${ticket.category}</div>
+            </div>
+          </div>
+        `;
+          })
+          .join("");
+
+        document
+          .querySelectorAll("#myTicketsGrid .ticket-card")
+          .forEach((card) => {
+            card.addEventListener("click", () => {
+              const ticketId = card.dataset.id;
+              const ticket = allTickets.find((t) => t.id === ticketId);
+              if (ticket) {
+                document
+                  .getElementById("myTicketsModal")
+                  .classList.remove("active");
+                openDetailModal(ticket);
+              }
+            });
+          });
+      }
+
+      function renderUsers() {
+        const usersList = document.getElementById("usersList");
+
+        if (allUsers.length === 0) {
+          usersList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-text" style="font-size: 14px;">No hay usuarios registrados</div>
+          </div>
+        `;
+          return;
+        }
+
+        usersList.innerHTML = allUsers
+          .map((user) => {
+            const displayName = user.display_name || user.name;
+            const profileImage = user.profile_image || "👤";
+            const hasPassword = user.password && user.password.length > 0;
+
+            return `
+          <div class="user-item">
+            <div class="user-item-left">
+              <img src="${getAvatarSrc(
+                profileImage
+              )}" alt="Avatar" class="user-item-avatar">
+              <div class="user-info-details">
+                <div class="user-name">${displayName}</div>
+                <div class="user-meta">
+                  ${user.email}
+                  <span class="user-role ${roleColors[user.role]}">${
+              roleLabels[user.role]
+            }</span>
+                  ${
+                    !hasPassword
+                      ? '<span style="color: #ed8936; margin-left: 8px;">⚠️ Pendiente configurar</span>'
+                      : ""
+                  }
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-danger btn-small" data-user-id="${
+                user.id
+              }">🗑️ Eliminar</button>
+            </div>
+          </div>
+        `;
+          })
+          .join("");
+
+        document.querySelectorAll("[data-user-id]").forEach((btn) => {
+          btn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const userId = btn.dataset.userId;
+            const user = allUsers.find((u) => u.id === userId);
+            if (user) {
+              await deleteUser(user);
+            }
+          });
+        });
+
+        updateAssignedSelect();
+      }
+
+      function renderNotifications() {
+        if (!currentUser) return;
+
+        const userNotifications = allNotifications
+          .filter((n) => n.user_id === currentUser.id)
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        const unreadCount = userNotifications.filter((n) => !n.read).length;
+
+        const badge = document.getElementById("notificationBadge");
+        if (unreadCount > 0) {
+          badge.textContent = unreadCount;
+          badge.classList.remove("hidden");
+        } else {
+          badge.classList.add("hidden");
+        }
+
+        const list = document.getElementById("notificationsList");
+
+        if (userNotifications.length === 0) {
+          list.innerHTML = `
+          <div class="empty-state" style="padding: 40px 20px;">
+            <div class="empty-state-text" style="font-size: 14px;">No tienes notificaciones</div>
+          </div>
+        `;
+          return;
+        }
+
+        list.innerHTML = userNotifications
+          .map((notif) => {
+            return `
+          <div class="notification-item ${
+            !notif.read ? "unread" : ""
+          }" data-notif-id="${notif.id}">
+            <div class="notification-title">${notif.title}</div>
+            <div class="notification-message">${notif.message}</div>
+            <div class="notification-time">${formatDate(notif.created_at)}</div>
+          </div>
+        `;
+          })
+          .join("");
+
+        document.querySelectorAll(".notification-item").forEach((item) => {
+          item.addEventListener("click", async () => {
+            const notifId = item.dataset.notifId;
+            const notif = allNotifications.find((n) => n.id === notifId);
+            if (notif && !notif.read) {
+              await markNotificationAsRead(notif);
+            }
+
+            if (notif.ticket_id) {
+              const ticket = allTickets.find((t) => t.id === notif.ticket_id);
+              if (ticket) {
+                document
+                  .getElementById("notificationsDropdown")
+                  .classList.remove("active");
+                openDetailModal(ticket);
+              }
+            }
+          });
+        });
+      }
+
+      async function markNotificationAsRead(notification) {
+        const updatedNotification = { ...notification, read: true };
+        await window.dataSdk.update(updatedNotification);
+      }
+
+      async function markAllNotificationsAsRead() {
+        if (!currentUser) return;
+
+        const userNotifications = allNotifications.filter(
+          (n) => n.user_id === currentUser.id && !n.read
+        );
+
+        for (const notif of userNotifications) {
+          const updatedNotif = { ...notif, read: true };
+          await window.dataSdk.update(updatedNotif);
+        }
+
+        showToast("✅ Todas las notificaciones marcadas como leídas");
+      }
+
+      async function createNotification(
+        userId,
+        title,
+        message,
+        ticketId = null
+      ) {
+        if (allNotifications.length >= 999) {
+          return;
+        }
+
+        const newNotification = {
+          data_type: "notification",
+          id:
+            "notif_" +
+            Date.now() +
+            "_" +
+            Math.random().toString(36).substr(2, 9),
+          user_id: userId,
+          title: title,
+          message: message,
+          ticket_id: ticketId,
+          read: false,
+          created_at: new Date().toISOString(),
+        };
+
+        await window.dataSdk.create(newNotification);
+      }
+
+      function updateUIForCurrentUser() {
+        const usersBtn = document.getElementById("usersBtn");
+        const myTicketsBtn = document.getElementById("myTicketsBtn");
+        const notificationBell = document.getElementById("notificationBell");
+
+        if (
+          currentUser &&
+          (currentUser.role === "owner" || currentUser.role === "admin")
+        ) {
+          usersBtn.style.display = "block";
+        } else {
+          usersBtn.style.display = "none";
+        }
+
+        if (currentUser) {
+          myTicketsBtn.style.display = "block";
+          notificationBell.style.display = "block";
+        } else {
+          myTicketsBtn.style.display = "none";
+          notificationBell.style.display = "none";
+        }
+      }
+
+      function updateAssignedSelect() {
+        const select = document.getElementById("ticketAssigned");
+        const currentValue = select.value;
+
+        const allUsersWithOwner = [OWNER_CREDENTIALS, ...allUsers];
+
+        select.innerHTML =
+          '<option value="">Sin asignar</option>' +
+          allUsersWithOwner
+            .map((user) => {
+              const displayName = user.display_name || user.name;
+              return `<option value="${user.id}">${displayName} (${
+                roleLabels[user.role]
+              })</option>`;
+            })
+            .join("");
+
+        if (currentValue) {
+          select.value = currentValue;
+        }
+      }
+
+      function renderComments(ticketId) {
+        const commentsSection = document.getElementById("commentsSection");
+        const ticketComments = allComments
+          .filter((c) => c.ticket_id === ticketId)
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        if (ticketComments.length === 0) {
+          commentsSection.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-text" style="font-size: 14px;">💬 No hay comentarios todavía</div>
+          </div>
+        `;
+          return;
+        }
+
+        commentsSection.innerHTML = ticketComments
+          .map((comment) => {
+            const userName = getUserName(comment.user_id);
+            const userAvatar = getUserAvatar(comment.user_id);
+            return `
+          <div class="comment-item">
+            <div class="comment-header">
+              <div class="comment-author-info">
+                <img src="${getAvatarSrc(
+                  userAvatar
+                )}" alt="Avatar" class="comment-avatar">
+                <span class="comment-author">${userName}</span>
+              </div>
+              <span class="comment-date">${formatDate(
+                comment.created_at
+              )}</span>
+            </div>
+            <div class="comment-text">${comment.comment}</div>
+          </div>
+        `;
+          })
+          .join("");
+      }
+
+      function openDetailModal(ticket) {
+        currentTicketForDetail = ticket;
+        document.getElementById("detailTicketTitle").textContent = ticket.title;
+        document.getElementById("detailTicketDescription").textContent =
+          ticket.description;
+        document.getElementById("detailTicketStatus").textContent =
+          statusLabels[ticket.status];
+        document.getElementById("detailTicketPriority").textContent =
+          priorityLabels[ticket.priority];
+        document.getElementById("detailTicketCategory").textContent =
+          ticket.category;
+        document.getElementById("detailTicketAssigned").textContent =
+          getUserName(ticket.assigned_to);
+
+        renderComments(ticket.id);
+        document.getElementById("commentInput").value = "";
+        document.getElementById("detailModal").classList.add("active");
+      }
+
+      function openNewModal() {
+        if (!currentUser) {
+          showToast("⚠️ Inicia sesión para crear tickets");
+          return;
+        }
+
+        currentTicket = null;
+        document.getElementById("modalTitle").textContent = "➕ Nuevo Ticket";
+        document.getElementById("ticketTitle").value = "";
+        document.getElementById("ticketDescription").value = "";
+        document.getElementById("ticketCategory").value = "Soporte";
+        document.getElementById("ticketPriority").value = "medium";
+        document.getElementById("ticketStatus").value = "open";
+        document.getElementById("ticketAssigned").value = "";
+        document.getElementById("deleteBtn").style.display = "none";
+        updateAssignedSelect();
+        document.getElementById("ticketModal").classList.add("active");
+      }
+
+      function openEditModal(ticket) {
+        currentTicket = ticket;
+        document.getElementById("modalTitle").textContent = "✏️ Editar Ticket";
+        document.getElementById("ticketTitle").value = ticket.title;
+        document.getElementById("ticketDescription").value = ticket.description;
+        document.getElementById("ticketCategory").value = ticket.category;
+        document.getElementById("ticketPriority").value = ticket.priority;
+        document.getElementById("ticketStatus").value = ticket.status;
+        document.getElementById("ticketAssigned").value =
+          ticket.assigned_to || "";
+        document.getElementById("deleteBtn").style.display = "block";
+        updateAssignedSelect();
+        document.getElementById("detailModal").classList.remove("active");
+        document.getElementById("ticketModal").classList.add("active");
+      }
+
+      function closeModal() {
+        document.getElementById("ticketModal").classList.remove("active");
+        currentTicket = null;
+      }
+
+      function closeDetailModal() {
+        document.getElementById("detailModal").classList.remove("active");
+        currentTicketForDetail = null;
+      }
+
+      function closeUsersModal() {
+        document.getElementById("usersModal").classList.remove("active");
+      }
+
+      function closeMyTicketsModal() {
+        document.getElementById("myTicketsModal").classList.remove("active");
+      }
+
+      function closeProfileModal() {
+        document.getElementById("profileModal").classList.remove("active");
+        pendingUserSetup = null;
+      }
+
+      function sendInvitationEmail(name, email, role) {
+        const appUrl = window.location.href;
+        const subject = encodeURIComponent(
+          "🎫 Invitación al Sistema de Tickets"
+        );
+        const body = encodeURIComponent(
+          `Hola ${name},\n\n` +
+            `Has sido invitado al Sistema de Gestión de Tickets.\n\n` +
+            `Tu rol asignado es: ${roleLabels[role]}\n\n` +
+            `📧 Tu correo de acceso es: ${email}\n\n` +
+            `Para completar tu registro:\n` +
+            `1. Accede al sistema en el siguiente enlace:\n` +
+            `${appUrl}\n\n` +
+            `2. Inicia sesión con tu correo\n` +
+            `3. Configura tu perfil:\n` +
+            `   - Elige tu avatar (emoji o imagen personalizada)\n` +
+            `   - Personaliza tu nombre para mostrar\n` +
+            `   - Crea tu contraseña de acceso (mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número, 1 símbolo)\n\n` +
+            `Una vez configurado tu perfil, podrás iniciar sesión con tu correo y contraseña.\n\n` +
+            `¡Bienvenido al equipo!\n\n` +
+            `Saludos,\n` +
+            `Jonathan Romero\n` +
+            `Administrador del Sistema`
+        );
+
+        window.open(
+          `mailto:${email}?subject=${subject}&body=${body}`,
+          "_blank"
+        );
+      }
+
+      function sendTicketAssignmentEmail(ticketTitle, assignedUser) {
+        const appUrl = window.location.href;
+        const subject = encodeURIComponent("🎫 Nuevo Ticket Asignado");
+        const body = encodeURIComponent(
+          `Hola ${assignedUser.display_name || assignedUser.name},\n\n` +
+            `Se te ha asignado un nuevo ticket:\n\n` +
+            `📋 Título: ${ticketTitle}\n\n` +
+            `Por favor, accede al sistema para revisar los detalles:\n` +
+            `${appUrl}\n\n` +
+            `También puedes ver todos tus tickets asignados en la sección "Mis Tickets".\n\n` +
+            `Saludos,\n` +
+            `Sistema de Gestión de Tickets`
+        );
+
+        window.open(
+          `mailto:${assignedUser.email}?subject=${subject}&body=${body}`,
+          "_blank"
+        );
+      }
+
+      async function sendSecurityAlert(alertType, details) {
+        const admins = allUsers.filter(
+          (u) => u.role === "admin" || u.role === "owner"
+        );
+        const adminEmails = [
+          OWNER_CREDENTIALS.email,
+          ...admins.map((a) => a.email),
+        ].join(",");
+
+        const subject = encodeURIComponent(
+          `🚨 Alerta de Seguridad: ${alertType}`
+        );
+        const body = encodeURIComponent(
+          `ALERTA DE SEGURIDAD\n\n` +
+            `Tipo: ${alertType}\n` +
+            `Detalles: ${details}\n` +
+            `Fecha y Hora: ${new Date().toLocaleString("es-ES")}\n\n` +
+            `Este es un mensaje automático del sistema de gestión de tickets.\n` +
+            `Por favor, revisa esta actividad sospechosa.\n\n` +
+            `Sistema de Gestión de Tickets`
+        );
+
+        window.open(
+          `mailto:${adminEmails}?subject=${subject}&body=${body}`,
+          "_blank"
+        );
+      }
+
+      async function saveTicket(e) {
+        e.preventDefault();
+
+        const saveBtn = document.getElementById("saveBtn");
+        const saveBtnContent = document.getElementById("saveBtnContent");
+        saveBtn.disabled = true;
+        saveBtnContent.innerHTML = '<span class="loading-spinner"></span>';
+
+        const ticketData = {
+          title: document.getElementById("ticketTitle").value,
+          description: document.getElementById("ticketDescription").value,
+          category: document.getElementById("ticketCategory").value,
+          priority: document.getElementById("ticketPriority").value,
+          status: document.getElementById("ticketStatus").value,
+          assigned_to: document.getElementById("ticketAssigned").value || "",
+        };
+
+        try {
+          if (currentTicket) {
+            const oldAssignedTo = currentTicket.assigned_to;
+            const newAssignedTo = ticketData.assigned_to;
+
+            const updatedTicket = { ...currentTicket, ...ticketData };
+            const result = await window.dataSdk.update(updatedTicket);
+
+            if (result.isOk) {
+              if (oldAssignedTo !== newAssignedTo && newAssignedTo) {
+                const assignedUser = getUser(newAssignedTo);
+                if (assignedUser) {
+                  await createNotification(
+                    newAssignedTo,
+                    "🎫 Nuevo Ticket Asignado",
+                    `Se te ha asignado el ticket: "${ticketData.title}"`,
+                    updatedTicket.id
+                  );
+                  sendTicketAssignmentEmail(ticketData.title, assignedUser);
+                }
+              }
+
+              showToast("✅ Ticket actualizado correctamente");
+              closeModal();
+            } else {
+              showToast("❌ Error al actualizar el ticket");
+            }
+          } else {
+            if (allTickets.length >= 999) {
+              showToast(
+                "⚠️ Límite de 999 tickets alcanzado. Por favor, elimina algunos tickets primero."
+              );
+              saveBtn.disabled = false;
+              saveBtnContent.textContent = "💾 Guardar";
+              return;
+            }
+
+            const newTicket = {
+              ...ticketData,
+              data_type: "ticket",
+              id:
+                "ticket_" +
+                Date.now() +
+                "_" +
+                Math.random().toString(36).substr(2, 9),
+              created_at: new Date().toISOString(),
+            };
+
+            const result = await window.dataSdk.create(newTicket);
+
+            if (result.isOk) {
+              if (ticketData.assigned_to) {
+                const assignedUser = getUser(ticketData.assigned_to);
+                if (assignedUser) {
+                  await createNotification(
+                    ticketData.assigned_to,
+                    "🎫 Nuevo Ticket Asignado",
+                    `Se te ha asignado el ticket: "${ticketData.title}"`,
+                    newTicket.id
+                  );
+                  sendTicketAssignmentEmail(ticketData.title, assignedUser);
+                }
+              }
+
+              showToast("✅ Ticket creado correctamente");
+              closeModal();
+            } else {
+              showToast("❌ Error al crear el ticket");
+            }
+          }
+        } finally {
+          saveBtn.disabled = false;
+          saveBtnContent.textContent = "💾 Guardar";
+        }
+      }
+
+      async function deleteTicket() {
+        if (!currentTicket) return;
+
+        const deleteBtn = document.getElementById("deleteBtn");
+        const deleteBtnContent = document.getElementById("deleteBtnContent");
+        deleteBtn.disabled = true;
+        deleteBtnContent.innerHTML = '<span class="loading-spinner"></span>';
+
+        try {
+          const result = await window.dataSdk.delete(currentTicket);
+
+          if (result.isOk) {
+            showToast("✅ Ticket eliminado correctamente");
+            closeModal();
+          } else {
+            showToast("❌ Error al eliminar el ticket");
+          }
+        } finally {
+          deleteBtn.disabled = false;
+          deleteBtnContent.textContent = "🗑️ Eliminar";
+        }
+      }
+
+      async function saveUser(e) {
+        e.preventDefault();
+
+        if (
+          !currentUser ||
+          (currentUser.role !== "owner" && currentUser.role !== "admin")
+        ) {
+          showToast(
+            "⚠️ Solo el dueño y los administradores pueden agregar usuarios"
+          );
+          return;
+        }
+
+        const addUserBtn = document.getElementById("addUserBtn");
+        const addUserBtnContent = document.getElementById("addUserBtnContent");
+        addUserBtn.disabled = true;
+        addUserBtnContent.innerHTML = '<span class="loading-spinner"></span>';
+
+        try {
+          if (allUsers.length >= 999) {
+            showToast("⚠️ Límite de usuarios alcanzado");
+            addUserBtn.disabled = false;
+            addUserBtnContent.textContent = "📨 Enviar Invitación por Correo";
+            return;
+          }
+
+          const userName = document.getElementById("userName").value;
+          const userEmail = document.getElementById("userEmail").value;
+          const userRole = document.getElementById("userRole").value;
+
+          const newUser = {
+            data_type: "user",
+            id:
+              "user_" +
+              Date.now() +
+              "_" +
+              Math.random().toString(36).substr(2, 9),
+            name: userName,
+            email: userEmail,
+            role: userRole,
+            password: "",
+            profile_image: "👤",
+            display_name: userName,
+            created_at: new Date().toISOString(),
+          };
+
+          const result = await window.dataSdk.create(newUser);
+
+          if (result.isOk) {
+            sendInvitationEmail(userName, userEmail, userRole);
+            document.getElementById("invitationSuccess").classList.add("show");
+            setTimeout(() => {
+              document
+                .getElementById("invitationSuccess")
+                .classList.remove("show");
+            }, 4000);
+            document.getElementById("userForm").reset();
+          } else {
+            showToast("❌ Error al agregar usuario");
+          }
+        } finally {
+          addUserBtn.disabled = false;
+          addUserBtnContent.textContent = "📨 Enviar Invitación por Correo";
+        }
+      }
+
+      async function deleteUser(user) {
+        const result = await window.dataSdk.delete(user);
+
+        if (result.isOk) {
+          showToast("✅ Usuario eliminado correctamente");
+        } else {
+          showToast("❌ Error al eliminar usuario");
+        }
+      }
+
+      async function addComment() {
+        if (!currentTicketForDetail) return;
+
+        if (!currentUser) {
+          showToast("⚠️ Inicia sesión para comentar");
+          return;
+        }
+
+        const commentInput = document.getElementById("commentInput");
+        const commentText = commentInput.value.trim();
+
+        if (!commentText) {
+          showToast("⚠️ Escribe un comentario");
+          return;
+        }
+
+        const addCommentBtn = document.getElementById("addCommentBtn");
+        const addCommentBtnContent = document.getElementById(
+          "addCommentBtnContent"
+        );
+        addCommentBtn.disabled = true;
+        addCommentBtnContent.innerHTML =
+          '<span class="loading-spinner"></span>';
+
+        try {
+          if (allComments.length >= 999) {
+            showToast("⚠️ Límite de comentarios alcanzado");
+            addCommentBtn.disabled = false;
+            addCommentBtnContent.textContent = "💬 Enviar";
+            return;
+          }
+
+          const newComment = {
+            data_type: "comment",
+            id:
+              "comment_" +
+              Date.now() +
+              "_" +
+              Math.random().toString(36).substr(2, 9),
+            ticket_id: currentTicketForDetail.id,
+            user_id: currentUser.id,
+            comment: commentText,
+            created_at: new Date().toISOString(),
+          };
+
+          const result = await window.dataSdk.create(newComment);
+
+          if (result.isOk) {
+            commentInput.value = "";
+            showToast("✅ Comentario agregado");
+          } else {
+            showToast("❌ Error al agregar comentario");
+          }
+        } finally {
+          addCommentBtn.disabled = false;
+          addCommentBtnContent.textContent = "💬 Enviar";
+        }
+      }
+
+      async function saveProfile(e) {
+        e.preventDefault();
+
+        if (!pendingUserSetup) return;
+
+        const displayName = document.getElementById("profileDisplayName").value;
+        const password = document.getElementById("profilePassword").value;
+
+        if (!validatePassword(password)) {
+          showPasswordError(
+            "❌ La contraseña no cumple con los requisitos de seguridad"
+          );
+          return;
+        }
+
+        hidePasswordError();
+
+        const saveProfileBtn = document.getElementById("saveProfileBtn");
+        const saveProfileBtnContent = document.getElementById(
+          "saveProfileBtnContent"
+        );
+        saveProfileBtn.disabled = true;
+        saveProfileBtnContent.innerHTML =
+          '<span class="loading-spinner"></span>';
+
+        try {
+          const updatedUser = {
+            ...pendingUserSetup,
+            display_name: displayName,
+            password: password,
+            profile_image: selectedEmoji,
+          };
+
+          const result = await window.dataSdk.update(updatedUser);
+
+          if (result.isOk) {
+            showToast("✅ Perfil configurado correctamente");
+            closeProfileModal();
+            login(updatedUser);
+          } else {
+            showToast("❌ Error al guardar el perfil");
+          }
+        } finally {
+          saveProfileBtn.disabled = false;
+          saveProfileBtnContent.textContent = "💾 Guardar y Empezar";
+        }
+      }
+
+      const dataHandler = {
+        onDataChanged(data) {
+          allTickets = data
+            .filter((item) => item.data_type === "ticket")
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+          allUsers = data
+            .filter((item) => item.data_type === "user")
+            .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+          allComments = data
+            .filter((item) => item.data_type === "comment")
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+          allNotifications = data
+            .filter((item) => item.data_type === "notification")
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+          renderTickets();
+          renderUsers();
+          renderNotifications();
+
+          if (
+            document
+              .getElementById("myTicketsModal")
+              .classList.contains("active")
+          ) {
+            renderMyTickets();
+          }
+
+          if (currentTicketForDetail) {
+            renderComments(currentTicketForDetail.id);
+          }
+        },
+      };
+
+      document
+        .getElementById("unifiedLoginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const email = document.getElementById("loginEmail").value.trim();
+          const password = document.getElementById("loginPassword").value;
+
+          if (
+            email === OWNER_CREDENTIALS.email &&
+            password === OWNER_CREDENTIALS.password
+          ) {
+            login(OWNER_CREDENTIALS);
+            return;
+          }
+
+          const userExists = allUsers.find((u) => u.email === email);
+
+          if (!userExists) {
+            showLoginError("❌ El usuario no existe en el sistema.");
+            await sendSecurityAlert(
+              "Intento de acceso con usuario inexistente",
+              `Se intentó acceder con el correo: ${email}`
+            );
+            return;
+          }
+
+          if (!userExists.password || userExists.password.length === 0) {
+            openProfileSetup(userExists);
+            return;
+          }
+
+          if (userExists.password !== password) {
+            showLoginError(
+              "❌ Contraseña incorrecta. Verifica tus credenciales."
+            );
+            await sendSecurityAlert(
+              "Intento de acceso con contraseña incorrecta",
+              `Usuario: ${
+                userExists.display_name || userExists.name
+              } (${email})`
+            );
+            return;
+          }
+
+          login(userExists);
+        });
+
+      document.querySelectorAll(".emoji-option").forEach((option) => {
+        option.addEventListener("click", () => {
+          document
+            .querySelectorAll(".emoji-option")
+            .forEach((opt) => opt.classList.remove("selected"));
+          option.classList.add("selected");
+          selectedEmoji = option.dataset.emoji;
+          document.getElementById("profileImagePreview").src =
+            getAvatarSrc(selectedEmoji);
+        });
+      });
+
+      document.getElementById("emojiTabBtn").addEventListener("click", () => {
+        document.getElementById("emojiPicker").style.display = "grid";
+        document.getElementById("imageUploadSection").style.display = "none";
+      });
+
+      document.getElementById("imageTabBtn").addEventListener("click", () => {
+        document.getElementById("emojiPicker").style.display = "none";
+        document.getElementById("imageUploadSection").style.display = "block";
+      });
+
+      document
+        .getElementById("avatarUpload")
+        .addEventListener("change", (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              selectedEmoji = event.target.result;
+              document.getElementById("profileImagePreview").src =
+                selectedEmoji;
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+
+      document
+        .getElementById("notificationBtn")
+        .addEventListener("click", () => {
+          const dropdown = document.getElementById("notificationsDropdown");
+          dropdown.classList.toggle("active");
+        });
+
+      document
+        .getElementById("markAllReadBtn")
+        .addEventListener("click", () => {
+          markAllNotificationsAsRead();
+        });
+
+      document.getElementById("myTicketsBtn").addEventListener("click", () => {
+        renderMyTickets();
+        document.getElementById("myTicketsModal").classList.add("active");
+      });
+
+      document
+        .getElementById("closeMyTicketsModal")
+        .addEventListener("click", closeMyTicketsModal);
+
+      document.querySelectorAll("[data-my-filter]").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          document
+            .querySelectorAll("[data-my-filter]")
+            .forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          myTicketsFilter = tab.dataset.myFilter;
+          renderMyTickets();
+        });
+      });
+
+      document.getElementById("logoutBtn").addEventListener("click", logout);
+      document
+        .getElementById("newTicketBtn")
+        .addEventListener("click", openNewModal);
+      document
+        .getElementById("closeModal")
+        .addEventListener("click", closeModal);
+      document
+        .getElementById("cancelBtn")
+        .addEventListener("click", closeModal);
+      document
+        .getElementById("ticketForm")
+        .addEventListener("submit", saveTicket);
+      document
+        .getElementById("deleteBtn")
+        .addEventListener("click", deleteTicket);
+      document
+        .getElementById("closeDetailModal")
+        .addEventListener("click", closeDetailModal);
+      document
+        .getElementById("closeDetailBtn")
+        .addEventListener("click", closeDetailModal);
+      document.getElementById("editTicketBtn").addEventListener("click", () => {
+        if (currentTicketForDetail) {
+          openEditModal(currentTicketForDetail);
+        }
+      });
+      document.getElementById("usersBtn").addEventListener("click", () => {
+        document.getElementById("usersModal").classList.add("active");
+      });
+      document
+        .getElementById("closeUsersModal")
+        .addEventListener("click", closeUsersModal);
+      document.getElementById("userForm").addEventListener("submit", saveUser);
+      document
+        .getElementById("addCommentBtn")
+        .addEventListener("click", addComment);
+      document
+        .getElementById("profileForm")
+        .addEventListener("submit", saveProfile);
+      document
+        .getElementById("closeProfileModal")
+        .addEventListener("click", closeProfileModal);
+
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab")
+            .forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          currentFilter = tab.dataset.filter;
+          renderTickets();
+        });
+      });
+
+      document.getElementById("ticketModal").addEventListener("click", (e) => {
+        if (e.target.id === "ticketModal") {
+          closeModal();
+        }
+      });
+
+      document.getElementById("detailModal").addEventListener("click", (e) => {
+        if (e.target.id === "detailModal") {
+          closeDetailModal();
+        }
+      });
+
+      document.getElementById("usersModal").addEventListener("click", (e) => {
+        if (e.target.id === "usersModal") {
+          closeUsersModal();
+        }
+      });
+
+      document
+        .getElementById("myTicketsModal")
+        .addEventListener("click", (e) => {
+          if (e.target.id === "myTicketsModal") {
+            closeMyTicketsModal();
+          }
+        });
+
+      document.getElementById("profileModal").addEventListener("click", (e) => {
+        if (e.target.id === "profileModal") {
+          closeProfileModal();
+        }
+      });
+
+      document.addEventListener("click", (e) => {
+        const dropdown = document.getElementById("notificationsDropdown");
+        const bell = document.getElementById("notificationBtn");
+        if (!dropdown.contains(e.target) && !bell.contains(e.target)) {
+          dropdown.classList.remove("active");
+        }
+      });
+
+      async function onConfigChange(config) {
+        const customFont = config.font_family || defaultConfig.font_family;
+        const baseFontStack =
+          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        const fontFamily = `${customFont}, ${baseFontStack}`;
+        const baseSize = config.font_size || defaultConfig.font_size;
+
+        document.body.style.fontFamily = fontFamily;
+        document.body.style.background =
+          config.background_color || defaultConfig.background_color;
+        document.body.style.color =
+          config.text_color || defaultConfig.text_color;
+
+        document.getElementById("appTitle").textContent =
+          config.app_title || defaultConfig.app_title;
+        document.getElementById("appTitle").style.fontSize = `${
+          baseSize * 2
+        }px`;
+        document.getElementById("newTicketBtnText").textContent =
+          config.new_ticket_button || defaultConfig.new_ticket_button;
+        document.getElementById(
+          "newTicketBtnText"
+        ).style.fontSize = `${baseSize}px`;
+
+        document.getElementById("tabAll").textContent =
+          config.all_tickets_label || defaultConfig.all_tickets_label;
+        document.getElementById("tabAll").style.fontSize = `${baseSize}px`;
+        document.getElementById("tabOpen").textContent =
+          config.open_tickets_label || defaultConfig.open_tickets_label;
+        document.getElementById("tabOpen").style.fontSize = `${baseSize}px`;
+        document.getElementById("tabPending").textContent =
+          config.pending_tickets_label || defaultConfig.pending_tickets_label;
+        document.getElementById("tabPending").style.fontSize = `${baseSize}px`;
+        document.getElementById("tabClosed").textContent =
+          config.closed_tickets_label || defaultConfig.closed_tickets_label;
+        document.getElementById("tabClosed").style.fontSize = `${baseSize}px`;
+
+        const primaryColor =
+          config.primary_action_color || defaultConfig.primary_action_color;
+        const secondaryColor =
+          config.secondary_action_color || defaultConfig.secondary_action_color;
+        const surfaceColor =
+          config.surface_color || defaultConfig.surface_color;
+
+        document.querySelectorAll(".btn-primary").forEach((btn) => {
+          btn.style.background = primaryColor;
+          btn.style.fontSize = `${baseSize}px`;
+        });
+
+        document.querySelectorAll(".btn-secondary").forEach((btn) => {
+          btn.style.background = secondaryColor;
+          btn.style.fontSize = `${baseSize}px`;
+        });
+
+        document.querySelectorAll(".btn-outline").forEach((btn) => {
+          btn.style.color = primaryColor;
+          btn.style.borderColor = primaryColor;
+          btn.style.fontSize = `${baseSize}px`;
+        });
+
+        document.querySelectorAll(".tab").forEach((tab) => {
+          tab.style.fontSize = `${baseSize}px`;
+        });
+
+        document.querySelectorAll(".tab.active").forEach((tab) => {
+          tab.style.color = primaryColor;
+          tab.style.borderBottomColor = primaryColor;
+        });
+
+        document.querySelectorAll(".ticket-card").forEach((card) => {
+          card.style.background = surfaceColor;
+        });
+
+        document.querySelectorAll(".modal-content").forEach((modal) => {
+          modal.style.background = surfaceColor;
+        });
+
+        document.querySelectorAll(".ticket-title").forEach((el) => {
+          el.style.fontSize = `${baseSize * 1.15}px`;
+        });
+
+        document.querySelectorAll(".ticket-description").forEach((el) => {
+          el.style.fontSize = `${baseSize}px`;
+        });
+
+        document.querySelectorAll(".form-group label").forEach((el) => {
+          el.style.fontSize = `${baseSize}px`;
+        });
+
+        document
+          .querySelectorAll(
+            ".form-group input, .form-group textarea, .form-group select"
+          )
+          .forEach((el) => {
+            el.style.fontSize = `${baseSize}px`;
+          });
+
+        document.querySelectorAll(".modal-header h2").forEach((el) => {
+          el.style.fontSize = `${baseSize * 1.7}px`;
+        });
+      }
+
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange,
+          mapToCapabilities: (config) => ({
+            recolorables: [
+              {
+                get: () =>
+                  config.background_color || defaultConfig.background_color,
+                set: (value) => {
+                  config.background_color = value;
+                  window.elementSdk.setConfig({ background_color: value });
+                },
+              },
+              {
+                get: () => config.surface_color || defaultConfig.surface_color,
+                set: (value) => {
+                  config.surface_color = value;
+                  window.elementSdk.setConfig({ surface_color: value });
+                },
+              },
+              {
+                get: () => config.text_color || defaultConfig.text_color,
+                set: (value) => {
+                  config.text_color = value;
+                  window.elementSdk.setConfig({ text_color: value });
+                },
+              },
+              {
+                get: () =>
+                  config.primary_action_color ||
+                  defaultConfig.primary_action_color,
+                set: (value) => {
+                  config.primary_action_color = value;
+                  window.elementSdk.setConfig({ primary_action_color: value });
+                },
+              },
+              {
+                get: () =>
+                  config.secondary_action_color ||
+                  defaultConfig.secondary_action_color,
+                set: (value) => {
+                  config.secondary_action_color = value;
+                  window.elementSdk.setConfig({
+                    secondary_action_color: value,
+                  });
+                },
+              },
+            ],
+            borderables: [],
+            fontEditable: {
+              get: () => config.font_family || defaultConfig.font_family,
+              set: (value) => {
+                config.font_family = value;
+                window.elementSdk.setConfig({ font_family: value });
+              },
+            },
+            fontSizeable: {
+              get: () => config.font_size || defaultConfig.font_size,
+              set: (value) => {
+                config.font_size = value;
+                window.elementSdk.setConfig({ font_size: value });
+              },
+            },
+          }),
+          mapToEditPanelValues: (config) =>
+            new Map([
+              ["app_title", config.app_title || defaultConfig.app_title],
+              [
+                "new_ticket_button",
+                config.new_ticket_button || defaultConfig.new_ticket_button,
+              ],
+              [
+                "all_tickets_label",
+                config.all_tickets_label || defaultConfig.all_tickets_label,
+              ],
+              [
+                "open_tickets_label",
+                config.open_tickets_label || defaultConfig.open_tickets_label,
+              ],
+              [
+                "pending_tickets_label",
+                config.pending_tickets_label ||
+                  defaultConfig.pending_tickets_label,
+              ],
+              [
+                "closed_tickets_label",
+                config.closed_tickets_label ||
+                  defaultConfig.closed_tickets_label,
+              ],
+            ]),
+        });
+      }
+
+      (async () => {
+        if (window.dataSdk) {
+          const initResult = await window.dataSdk.init(dataHandler);
+          if (!initResult.isOk) {
+            console.error("Error al inicializar Data SDK");
+          }
+        }
+      })();
+    </script>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'9a2be0cab32321a7',t:'MTc2Mzg1MDY5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
